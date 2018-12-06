@@ -1,0 +1,260 @@
+module mojo_top (
+    input clk,              // 50MHz clock
+    input rst_n,            // reset button (active low)
+    output led [8],         // 8 user controllable LEDs
+    input cclk,             // configuration clock, AVR ready when high
+    output spi_miso,        // AVR SPI MISO
+    input spi_ss,           // AVR SPI Slave Select
+    input spi_mosi,         // AVR SPI MOSI
+    input spi_sck,          // AVR SPI Clock
+    output spi_channel [4], // AVR general purpose pins (used by default to select ADC channel)
+    input avr_tx,           // AVR TX (FPGA RX)
+    output avr_rx,          // AVR RX (FPGA TX)
+    input avr_rx_busy,      // AVR RX buffer full
+    output io_led [3][8],   // LEDs on IO Shield
+    output io_seg [8],      // 7-segment LEDs on IO Shield
+    output io_sel [4],      // Digit select on IO Shield
+    input io_button [5],    // 5 buttons on IO Shield
+    input io_dip [3][8],     // DIP switches on IO Shield
+    input arcade_button[6],
+    output rpin,
+	   output gpin,
+	   output bpin,
+	   output vpin,
+	   output hpin
+  ) {
+  sig arcade_button_n[6];
+  sig rst;                  // reset signal
+  
+  .clk(clk) {
+    // The reset conditioner is used to synchronize the reset signal to the FPGA
+    // clock. This ensures the entire FPGA comes out of reset at the same time.
+    reset_conditioner reset_cond;
+  }
+  .clk(clk) {
+  .rst(rst) {
+     vga display; 
+    fsm level = {DEFAULT, LEVEL0, LEVEL1, LEVEL2,LEVEL3, LEVEL4, LEVEL5, LEVEL6, LEVEL7, LEVEL8, FAIL};
+    dff counter[27];  
+    dff current_level[5];  
+
+
+  .x(display.x) {
+  .y(display.y) {
+  .i_animate(display.o_animate) {
+  .up(arcade_button_n[0]) {       
+  .down(arcade_button_n[2]) {
+  .left(arcade_button_n[3]) {
+  .right(arcade_button_n[4]) {
+        menu menu;
+        level1 level0;
+        level2 level1;
+        level6 level3;
+          
+  .change_ball(arcade_button_n[1]) {
+          level4 level2;
+          level5 level4;
+                    
+                    }         
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  always {
+    level0.on = 0;
+    level1.on = 0;
+    level2.on = 0;
+    level3.on = 0;
+    level4.on = 0;
+    menu.on = 0;  
+    rpin = 0;
+    gpin = 0;
+    bpin = 0;
+    arcade_button_n = ~ arcade_button;
+    reset_cond.in = ~rst_n; // input raw inverted reset signal
+    rst = reset_cond.out;   // conditioned reset
+    
+    led = 8h00;             // turn LEDs off
+    spi_miso = bz;          // not using SPI
+    spi_channel = bzzzz;    // not using flags
+    avr_rx = bz;            // not using serial port
+    
+    io_led = 3x{{8h00}};    // turn LEDs off
+    io_seg = 8hff;          // turn segments off
+    io_sel = 4hf;           // select no digits
+    io_led[0][5:0] = arcade_button_n;
+    vpin = display.vsync;
+    hpin = display.hsync;
+    rpin = menu.r;
+    gpin = menu.g;
+    bpin = menu.b;
+    current_level.d = current_level.q;
+    counter.d = counter.q + 1;
+    level.d = level.q;
+    case(level.q) {
+      level.DEFAULT:
+        menu.on = 1;
+        rpin = menu.r;
+        gpin = menu.g;
+        bpin = menu.b;
+        if (menu.o_x == 0 && menu.o_y == 0 && arcade_button_n[1]) {    //use alu here to add menux and menuy
+        level.d = level.LEVEL0;
+        } else if (menu.o_x == 1 && menu.o_y == 0 && arcade_button_n[1]) {
+        level.d = level.LEVEL1;
+        } else if (menu.o_x == 2 && menu.o_y == 0 && arcade_button_n[1]) {
+        level.d = level.LEVEL2;
+        } else if (menu.o_x == 3 && menu.o_y == 0 && arcade_button_n[1]) {
+        level.d = level.LEVEL3;
+        } else if (menu.o_x == 4 && menu.o_y == 0 && arcade_button_n[1]) {
+        level.d = level.LEVEL4;
+        } else if (menu.o_x == 0 && menu.o_y == 1 && arcade_button_n[1]) {
+        level.d = level.LEVEL5;
+        } else if (menu.o_x == 1 && menu.o_y == 1 && arcade_button_n[1]) {
+        level.d = level.LEVEL6;
+        } else if (menu.o_x == 2 && menu.o_y == 1 && arcade_button_n[1]) {
+        level.d = level.LEVEL7;
+        }
+     level.LEVEL0:
+        level0.on = 1;
+        rpin = level0.r;
+        gpin = level0.g;
+        bpin = level0.b;
+        if (level0.fail == 1) {
+        counter.d = 0;
+        current_level.d = 0;
+        level.d = level.FAIL;
+        } else if (arcade_button_n[5]) {
+        level.d = level.DEFAULT;            
+        } else if (level0.pass) {
+        counter.d = 0;
+        current_level.d = 1;
+        level.d = level.FAIL;
+        } 
+
+      level.LEVEL1:
+        level1.on = 1;
+        rpin = level1.r;
+        gpin = level1.g;
+        bpin = level1.b;
+        if (arcade_button_n[5]) {
+        level.d = level.DEFAULT;            
+        } else if (level1.pass) {
+        counter.d = 0;
+        current_level.d = 2;
+        level.d = level.FAIL;
+        } 
+      level.LEVEL2:
+        level1.on = 0;
+        level2.on = 1;
+        rpin = level2.r;
+        gpin = level2.g;
+        bpin = level2.b;
+        if ( arcade_button_n[5] == 1) {
+        level.d = level.DEFAULT;
+        } else if (level2.pass) {
+        counter.d = 0;
+        current_level.d = 3;
+        level.d = level.FAIL;
+        } 
+      level.LEVEL3:
+        level2.on = 0;
+        level3.on = 1;
+        rpin = level3.r;
+        gpin = level3.g;
+        bpin = level3.b;
+        if ( arcade_button_n[5] == 1) {
+        level.d = level.DEFAULT;
+        } else if (level3.pass) {
+        counter.d = 0;
+        current_level.d = 4;
+        level.d = level.FAIL;
+        }
+      level.LEVEL4:
+        level3.on = 0;
+        level4.on = 1;
+        rpin = level4.r;
+        gpin = level4.g;
+        bpin = level4.b;
+        if (arcade_button_n[5]) {
+        level.d = level.DEFAULT;
+        } else if (level4.pass) {
+        counter.d = 0;
+        current_level.d = 0;
+        level.d = level.FAIL;
+        } 
+      /*level.LEVEL5:
+        level2.on = 0;
+        level5.on = 1;
+        rpin = level5.r;
+        gpin = level5.g;
+        bpin = level5.b;
+        if (arcade_button_n[5]) {
+        level.d = level.DEFAULT;
+        } else if (level5.pass) {
+        counter.d = 0;
+        current_level.d = 1;
+        level.d = level.FAIL;
+        } 
+           
+        
+         level.LEVEL6:
+        level6.on = 1;
+        rpin = level6.r;
+        gpin = level6.g;
+        bpin = level6.b;
+        if (arcade_button[5]) {
+        current_level.d = 6;
+        counter.d = 0;
+        level.d = level.FAIL;
+        }
+        if (level6.pass) {
+        level6.on = 0;
+        level.d = level.LEVEL6;
+        }
+      level.LEVEL7:
+        level7.on = 1;
+        rpin = level7.r;
+        gpin = level7.g;
+        bpin = level7.b;
+        /*if (level4.fail) {
+        current_level.d = 4;
+        counter.d = 0;
+        level.d = level.FAIL;
+        }
+        if (level7.pass) {
+        level.d = level.LEVEL7;
+        } */
+      
+      level.FAIL:
+      io_led = 3x{{8hFF}};
+      //rpin = gameover.red;
+      //gpin = gameover.green;
+      //bpin = gameover.blue;
+      if (counter.q[23] == 1) {
+        if (current_level.q == 1) {
+        level.d = level.LEVEL1;
+          } else if (current_level.q ==0) {
+          level.d = level.LEVEL0;
+          } else if (current_level.q ==2) {
+          level.d = level.LEVEL2;
+          } else if (current_level.q ==3) {
+          level.d = level.LEVEL3;
+          } else if (current_level.q ==4) {
+          level.d = level.LEVEL4;
+          } else if (current_level.q ==5) {
+          level.d = level.LEVEL5;
+          } else if (current_level.q ==6) {
+          level.d = level.LEVEL6;
+          } 
+        }   
+            
+    }
+
+  }
+}

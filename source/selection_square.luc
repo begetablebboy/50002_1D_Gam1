@@ -1,0 +1,143 @@
+//TODO Make a case where the ball is moving adjust graphic and position 
+//TODO direction input
+
+module selection_square (
+    input clk,  // clock
+    input rst,  // reset
+    //input i_x[5], //starting x
+    //input i_y[5], //starting y
+    input left,
+    input right,
+    input up,
+    input down,
+    input x[11],
+    input y[11],
+    input i_animate,
+    input on,              //controls if the ball can move, due to different levels
+    input reset,
+    output o_x[5],
+    output o_y[5],
+    output red,
+    output green,
+    output blue
+  ) {
+  .clk(clk) {
+  .rst(rst) {
+    dff currentx[5](#INIT(31));
+    dff currenty[5](#INIT(31));
+    dff pixel_reg;
+    fsm state = {IDLE, LEFT, RIGHT, UP, DOWN};
+    dff counter[24];
+    }
+  }
+  sig start_x[11];
+  sig start_y[11];
+  sig pixel_tick;
+  umovingsquare umovingsquare(#H_SIZE(23), #V_SIZE(31), #H2_SIZE(18), #V2_SIZE(26), .i_x(start_x), .i_y(start_y));
+
+  always {
+  pixel_reg.d = ~pixel_reg.q;
+  pixel_tick = (pixel_reg.q == 0);
+  red = 0;
+  green = 0;
+  blue = 0; 
+  o_x = currentx.q;
+  o_y = currenty.q;
+  counter.d = counter.q + 1;
+
+  if (reset) {
+    currentx.d = 0;
+    currenty.d = 0;
+    state.d = state.IDLE;
+    }
+
+    case(state.q) {
+      state.IDLE:
+        if (currentx.q == 31 && currenty.q == 31) {   
+          currentx.d = 0;
+          currenty.d = 0;
+        } else {
+          currentx.d = currentx.q;
+          currenty.d = currenty.q;
+        }
+        if (on) {
+
+        if(left) {
+          counter.d = 0;
+          state.d = state.LEFT;
+
+        }
+        if(right) {
+            counter.d =0;
+          state.d = state.RIGHT;
+
+        }
+        if(up) {
+          counter.d = 0;
+          state.d = state.UP;
+
+        }
+        if(down) {
+          counter.d = 0;
+          state.d = state.DOWN;
+
+        }
+    }
+        
+      state.LEFT:
+        if (pixel_tick == 1 && i_animate ==1 && counter.q[23] == 1) {
+        if (currentx.q == 0) {
+          currentx.d = 4;
+          } else {
+           currentx.d = currentx.q - 1;
+          }
+           currenty.d =currenty.q;  
+          state.d=state.IDLE;        
+      }
+      state.RIGHT:
+        if (pixel_tick == 1 && i_animate ==1 && counter.q[23] == 1) {
+        if (currentx.q == 4) {
+          currentx.d = 0;
+          } else {
+           currentx.d = currentx.q + 1;
+          }
+           currenty.d =currenty.q;  
+          state.d=state.IDLE;        
+      }
+      state.UP:
+        if (pixel_tick == 1 && i_animate ==1 && counter.q[23] == 1) {
+        if (currenty.q == 0) {
+          currenty.d = 1;
+          } else {
+           currenty.d = currenty.q - 1;
+          }
+          currentx.d =currentx.q;  
+          state.d=state.IDLE;        
+      }
+      state.DOWN:
+        if (pixel_tick == 1 && i_animate == 1 && counter.q[23] == 1) {
+        if (currenty.q == 1) {
+          currenty.d = 0;
+          } else {
+           currenty.d = currenty.q + 1;
+          }
+           currentx.d = currentx.q;  
+          state.d=state.IDLE;        
+      }    
+    }
+      
+  start_x = 233 + currentx.q * 54;
+  start_y = 185 + currenty.q * 67;
+  if(x > umovingsquare.o_x1 && x <= umovingsquare.o_x2 && y > umovingsquare.o_y1 && y <= umovingsquare.o_y2)  {
+     //generate picture from the video memory
+      red = 0;
+      green = 0;
+      blue = 1;
+     
+    } else if (x > umovingsquare.o_x3 && x<= umovingsquare.o_x4 && y> umovingsquare.o_y3 && y <=umovingsquare.o_y4) {
+      red = 0;
+      green = 0;
+      blue = 0;
+    }
+  }
+}

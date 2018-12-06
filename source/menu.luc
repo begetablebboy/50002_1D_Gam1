@@ -1,0 +1,54 @@
+module menu (
+    input clk,  // clock
+    input rst,  // reset
+    input left,
+    input right,
+    input up,
+    input down,
+    input x[11],
+    input y[11],
+    input i_animate,
+    input on,
+    output o_x[5],
+    output o_y[5],
+    output r,
+    output g,
+    output b
+    //output fail,
+    //output pass
+  ) {
+    .clk(clk) {
+  .rst(rst) { 
+
+  .x(x) {
+  .y(y) {
+        //level_display level_display(.i_x(5d8), .i_y(5d5));
+        selection_square selection_square(.on(on), .right(right), .down(down), .up(up), .left(left), .i_animate(i_animate));
+        }
+      }
+    }
+  }
+
+
+  always {
+    if (on) {
+      selection_square.reset = 0;
+      r =  selection_square.red;
+      g =  selection_square.green;
+      b =  selection_square.blue;
+      o_x = selection_square.o_x;
+      o_y = selection_square.o_y;
+    
+    } else {
+    selection_square.reset = 0;
+      r = 0;
+      g = 0;
+      b = 0;
+      o_x = 0;
+      o_y = 0;
+    
+    }
+  
+    
+  }
+}

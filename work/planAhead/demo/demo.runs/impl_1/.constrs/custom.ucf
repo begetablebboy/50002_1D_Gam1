@@ -1,0 +1,34 @@
+//up button
+NET "arcade_button[0]" LOC = P121;
+NET "arcade_button[0]" IOSTANDARD = LVTTL;
+NET "arcade_button[0]" PULLUP;
+//center button
+NET "arcade_button[1]" LOC = P58;
+NET "arcade_button[1]" IOSTANDARD = LVTTL;
+NET "arcade_button[1]" PULLUP;
+//down button
+NET "arcade_button[2]" LOC = P119;
+NET "arcade_button[2]" IOSTANDARD = LVTTL;
+NET "arcade_button[2]" PULLUP;
+//left button
+NET "arcade_button[3]" LOC = P118;
+NET "arcade_button[3]" IOSTANDARD = LVTTL;
+NET "arcade_button[3]" PULLUP;
+//right button
+NET "arcade_button[4]" LOC = P120;
+NET "arcade_button[4]" IOSTANDARD = LVTTL;
+NET "arcade_button[4]" PULLUP;
+//reset button
+NET "arcade_button[5]" LOC = P67;
+NET "arcade_button[5]" IOSTANDARD = LVTTL;
+NET "arcade_button[5]" PULLUP;
+NET "rpin" LOC = P51;
+NET "rpin" IOSTANDARD = LVTTL;
+NET "gpin" LOC = P50;
+NET "gpin" IOSTANDARD = LVTTL;
+NET "bpin" LOC = P41;
+NET "bpin" IOSTANDARD = LVTTL;
+NET "hpin" LOC = P40;
+NET "hpin" IOSTANDARD = LVTTL;
+NET "vpin" LOC = P35;
+NET "vpin" IOSTANDARD = LVTTL;

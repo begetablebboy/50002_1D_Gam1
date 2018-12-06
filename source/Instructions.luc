@@ -1,0 +1,23 @@
+global Instruction {
+  // Adder instructions
+  const ADD   = 6b000000; // Inputs: a, b, alufn; Outputs: sum
+  const SUB   = 6b000001; // Inputs: a, b, alufn; Outputs: difference
+  
+  // Boolean instructions
+  const AND   = 6b011000; // Works Inputs: a, b, alufn; Outputs: op1 & op2
+  const OR    = 6b011110; // Works Inputs: a, b, alufn; Outputs: op1 | op2
+  const XOR   = 6b010110; // Works Inputs: a, b, alufn; Outputs: op1 ^ op2
+  const LDR   = 6b011010; // Works Inputs: a, b, alufn; Outputs: op1
+
+  
+  // Shifter instructions
+  const SHL   = 6b100000; // Works Inputs: a, b, alufn; Outputs: op1 >> op2
+  const SHR   = 6b100001; // Works Inputs: a, b, alufn; Outputs: op1 << op2
+  const SRA   = 6b100011; // Works Inputs: a, b, alufn; Outputs: op1 << op2 with sign extension
+  
+  // Comparator instructions
+  const CMPEQ = 6b110011; // Works Inputs: a, b, alufn; Outputs: op1 == op2
+  const CMPLT = 6b110101; // Works Inputs: a, b, alufn; Outputs: op1 < op2
+  const CMPLE = 6b110111; // Works Inputs: a, b, alufn; Outputs: op1 <= op2
+  
+}

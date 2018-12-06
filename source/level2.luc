@@ -1,0 +1,149 @@
+module level2 (
+    input clk,  // clock
+    input rst,  // reset
+    input left,
+    input right,
+    input up,
+    input down,
+    input x[11],
+    input y[11],
+    input i_animate,
+    input on,
+    output r,
+    output g,
+    output b,
+    output pass
+  ) {
+  sig grid_input[10][16];
+  sig star_r, star_g, star_b;
+  sig star1_r, star1_g, star1_b;
+  sig star2_r, star2_g, star2_b;
+  sig star3_r, star3_g, star3_b;   
+  
+  .clk(clk) {
+    // The reset conditioner is used to synchronize the reset signal to the FPGA
+    // clock. This ensures the entire FPGA comes out of reset at the same time.
+    .rst(rst) {
+    dff grid_change[10][16];
+    dff collision[2];   //ball collides with star
+    dff collision1[2];   //ball collides with star
+    dff collision2[2];   //ball collides with star   
+    dff collision3[2];   //ball collides with star    
+    dff stars[4];    //counts number of stars collected   
+    }
+  }
+  .clk(clk) {
+  .rst(rst) {
+    .x(x){
+      .y(y) { 
+   ball ball(.i_x(5d9), .i_y(5d7), .up(up),.down(down),.left(left),.right(right),.i_animate(i_animate));
+   star star(.i_x(5d6), .i_y(5d3));
+   star star1(.i_x(5d7), .i_y(5d6));
+   star star2(.i_x(5d5), .i_y(5d7));
+   star star3(.i_x(5d10),.i_y(5d8));
+   grid grid;
+        }
+      }
+      }
+    }  
+  always {
+    grid_input = c{{16h0000},2x{{16h1010}},{16h0200},{16h03C0},{16h1E30}, 2x{{16h1090}},{16h1010},{16h0000}};
+    grid.grid = grid_change.q;
+    ball.grid = grid_change.q;
+    if (on) {
+    grid_change.d = grid_input;
+    ball.reset = 0;
+    ball.on = 1;
+    stars.d = stars.q;
+    if (collision.q == 0) {
+      collision.d = ball.active & star.active;  //check if ball and star collides
+      star_r = star.red;                        //star visible if they havent collided
+      star_g = star.green;
+      star_b = star.blue;
+    } else if (collision.q == 1) {
+      stars.d = stars.q + 1;
+      collision.d = collision.q + 1;
+      star_r = 0;                              // star not visible if they collided
+      star_g = 0;
+      star_b = 0; 
+      } else {
+      collision.d = collision.q;                 // collision only happens once 
+      star_r = 0;                              // star not visible if they collided
+      star_g = 0;
+      star_b = 0;  
+    }
+    if (collision1.q == 0) {
+      collision1.d = ball.active & star1.active;
+      star1_r = star1.red;
+      star1_g = star1.green;
+      star1_b = star1.blue;
+    } else if (collision1.q == 1) {
+      stars.d = stars.q + 1;
+      collision1.d = collision1.q + 1;
+      star1_r = 0;
+      star1_g = 0;
+      star1_b = 0; 
+      } else {
+      collision1.d = collision1.q;
+      star1_r = 0;
+      star1_g = 0;
+      star1_b = 0;  
+    }
+    if (collision2.q == 0) {
+      collision2.d = ball.active & star2.active;
+      star2_r = star2.red;
+      star2_g = star2.green;
+      star2_b = star2.blue;
+    } else if (collision2.q == 1) {
+      stars.d = stars.q + 1;
+      collision2.d = collision2.q + 1;
+      star2_r = 0;
+      star2_g = 0;
+      star2_b = 0; 
+      } else {
+      collision2.d = collision2.q;
+      star2_r = 0;
+      star2_g = 0;
+      star2_b = 0;  
+    }
+    if (collision3.q == 0) {
+      collision3.d = ball.active & star3.active;
+      star3_r = star3.red;
+      star3_g = star3.green;
+      star3_b = star3.blue;
+    } else if (collision3.q == 1) {
+      stars.d = stars.q + 1;
+      collision3.d = collision3.q + 1;
+      star3_r = 0;
+      star3_g = 0;
+      star3_b = 0; 
+      } else {
+      collision3.d = collision3.q;
+      star3_r = 0;
+      star3_g = 0;
+      star3_b = 0;
+    }      
+    if (stars.q == 4) {
+      pass = 1;
+      } else {
+      pass = 0;
+      }   
+
+    r = grid.red | ball.red | star_r | star1_r|star2_r | star3_r;     // square b is red
+    g = grid.green|ball.green | star_g | star1_g|star2_g | star3_g;  // squares a and d are green
+    b = grid.blue|ball.blue | star_b | star1_b| star2_b | star3_b;    // square c is blue
+    } else {
+      ball.on = 0;    //must reset values so that the original level is restored
+      r = 0;          //rgb values =0 so the level isnt visibile
+      g = 0;
+      b = 0;          //collision, star, and gird restored back - star, expanding_square, ball module
+      collision.d = 0;  //pass/fail signals
+      collision1.d = 0;
+      collision2.d = 0;
+      collision3.d = 0;
+      stars.d = 0;
+      ball.reset = 1;
+      pass = 0;    
+    }    
+  }
+}

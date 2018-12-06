@@ -1,0 +1,416 @@
+module level5 (
+    input clk,  // clock
+    input rst,  // reset
+    input left,
+    input right,
+    input up,
+    input down,
+    input x[11],
+    input y[11],
+    input i_animate,
+    input on,
+    input change_ball,
+    output r,
+    output g,
+    output b,
+    output pass
+  ) {
+  sig pixel_tick;
+  sig grid_input[10][16];
+  sig star_r, star_g, star_b;
+  sig star1_r, star1_g, star1_b;
+  sig star2_r, star2_g, star2_b;
+  sig star3_r, star3_g, star3_b;
+  sig star4_r, star4_g, star4_b;
+  sig star5_r, star5_g, star5_b;
+  sig star6_r, star6_g, star6_b;
+  sig star7_r, star7_g, star7_b;
+  sig star8_r, star8_g, star8_b;
+  sig star9_r, star9_g, star9_b;
+  sig star10_r, star10_g, star10_b;
+  sig star11_r, star11_g, star11_b;
+
+  sig ball_r, ball_g, ball_b;
+  sig ball1_r, ball1_g, ball1_b; //for destroyed balls;
+  
+  .clk(clk) {
+    // The reset conditioner is used to synchronize the reset signal to the FPGA
+    // clock. This ensures the entire FPGA comes out of reset at the same time.
+    .rst(rst) {
+    dff pixel_reg;
+    dff grid_change[10][16];
+    dff collision[2];   //ball collides with star
+    dff collision1[2];   //ball collides with star
+    dff collision2[2];   //ball collides with star
+    dff collision3[2];   //ball collides with star
+    dff collision4[2];   //ball collides with star
+    dff collision5[2];   //ball collides with star
+    dff collision6[2];   //ball collides with star
+    dff collision7[2];   //ball collides with star
+    dff collision8[2];   //ball collides with star
+    dff collision9[2];   //ball collides with star
+    dff collision10[2];   //ball collides with star
+    dff collision11[2];   //ball collides with star
+      
+    dff stars[5];    //counts number of stars collected
+    dff counter[24];                      //below dffs are to keep track of which ball is being used
+    dff current_ball[3];
+    dff ball01_collision[2];               //ball 0 collides w ball1 while ball0 is moving
+    dff ball10_collision[2];
+    dff ball_destroyed;
+    dff ball1_destroyed;
+    fsm ball_selected = {IDLE, CHANGING};
+    
+    }
+  }
+  .clk(clk) {
+  .rst(rst) {
+    .x(x){
+      .y(y) { 
+   ball ball(.i_x(5d7), .i_y(5d3), .up(up),.down(down),.left(left),.right(right),.i_animate(i_animate));
+   ball ball1(.i_x(5d11), .i_y(5d4), .up(up),.down(down),.left(left),.right(right),.i_animate(i_animate));
+   star star(.i_x(5d5), .i_y(5d2));
+   star star1(.i_x(5d10), .i_y(5d2));
+   star star2(.i_x(5d6), .i_y(5d3));
+   star star3(.i_x(5d9), .i_y(5d3));
+   star star4(.i_x(5d7), .i_y(5d4));
+   star star5(.i_x(5d8), .i_y(5d4));
+   star star6(.i_x(5d7), .i_y(5d5));
+   star star7(.i_x(5d8), .i_y(5d5));
+   star star8(.i_x(5d6), .i_y(5d6));
+   star star9(.i_x(5d9), .i_y(5d6));
+   star star10(.i_x(5d5), .i_y(5d7));
+   star star11(.i_x(5d10), .i_y(5d7));
+   grid grid;
+        }
+      }
+      }
+    }  
+  always {
+    pixel_reg.d = ~pixel_reg.q;
+    pixel_tick = (pixel_reg.q == 0);
+    grid_input =  c{{16h0},{16h0D30},{16h0810},{16h0080},3x{{16h0}},{16h0890}, {16h0C30},{16h0}};
+    grid.grid = grid_change.q;
+    ball.grid = grid_change.q;
+    ball1.grid = grid_change.q;
+    counter.d = counter.q + 1; //timer for ball on ball collision 
+    if (on) {
+    grid_change.d = grid_input;
+    stars.d = stars.q;
+    ball.reset = 0;
+    ball1.reset = 0;
+    current_ball.d = current_ball.q;
+    ball_destroyed.d = ball_destroyed.q;    
+    ball1_destroyed.d = ball1_destroyed.q;
+    ball.on = 0;
+    ball1.on = 0;
+    
+    case (ball_selected.q) {
+        ball_selected.IDLE:
+          if (current_ball.q == 0) {
+          ball.on = 1;
+          ball1.on = 0;
+            } else if (current_ball.q ==1) {
+          ball.on = 0;
+          ball1.on = 1;
+          } 
+        if(change_ball) {
+          counter.d = 0;
+          ball_selected.d = ball_selected.CHANGING;
+        }
+         
+        ball_selected.CHANGING:
+          if (pixel_tick == 1 && i_animate == 1 && counter.q[23] == 1) {
+          if (ball1_destroyed.q == 1) {
+            current_ball.d = 0;
+            } else if (ball_destroyed.q == 1) {
+            current_ball.d = 1;
+            } else if (ball_destroyed.q ==0 && ball1_destroyed.q == 0) {
+              if (current_ball.q == 1) {
+                current_ball.d = 0;
+              } else {
+                current_ball.d = current_ball.q + 1;
+              }
+            } 
+          ball_selected.d = ball_selected.IDLE;
+
+          }
+      }  
+
+    if (collision.q == 0) {
+      collision.d = ball.active & star.active|ball1.active & star.active;  //check if ball and star collides
+      star_r = star.red;                        //star visible if they havent collided
+      star_g = star.green;
+      star_b = star.blue;
+    } else if (collision.q == 1) {
+      stars.d = stars.q + 1;
+      collision.d = collision.q + 1;
+      star_r = 0;                              // star not visible if they collided
+      star_g = 0;
+      star_b = 0; 
+      } else {
+      collision.d = collision.q;                 // collision only happens once 
+      star_r = 0;                              // star not visible if they collided
+      star_g = 0;
+      star_b = 0;  
+    }
+    if (collision1.q == 0) {
+      collision1.d = ball.active & star1.active|ball1.active & star1.active;
+      star1_r = star1.red;
+      star1_g = star1.green;
+      star1_b = star1.blue;
+    } else if (collision1.q == 1) {
+      stars.d = stars.q + 1;
+      collision1.d = collision1.q + 1;
+      star1_r = 0;
+      star1_g = 0;
+      star1_b = 0; 
+      } else {
+      collision1.d = collision1.q;
+      star1_r = 0;
+      star1_g = 0;
+      star1_b = 0;
+    }
+    if (collision2.q == 0) {
+      collision2.d = ball.active & star2.active |ball1.active & star2.active;
+      star2_r = star2.red;
+      star2_g = star2.green;
+      star2_b = star2.blue;
+    } else if (collision2.q == 1) {
+      stars.d = stars.q + 1;
+      collision2.d = collision2.q + 1;
+      star2_r = 0;
+      star2_g = 0;
+      star2_b = 0; 
+      } else {
+      collision2.d = collision2.q;
+      star2_r = 0;
+      star2_g = 0;
+      star2_b = 0;  
+    }
+    if (collision3.q == 0) {
+      collision3.d = ball.active & star3.active|ball1.active & star3.active;
+      star3_r = star3.red;
+      star3_g = star3.green;
+      star3_b = star3.blue;
+    } else if (collision3.q == 1) {
+      stars.d = stars.q + 1;
+      collision3.d = collision3.q + 1;
+      star3_r = 0;
+      star3_g = 0;
+      star3_b = 0; 
+      } else {
+      collision3.d = collision3.q;
+      star3_r = 0;
+      star3_g = 0;
+      star3_b = 0;  
+    }
+    if (collision4.q == 0) {
+      collision4.d = ball.active & star4.active|ball1.active & star4.active;
+      star4_r = star4.red;
+      star4_g = star4.green;
+      star4_b = star4.blue;
+    } else if (collision4.q == 1) {
+      stars.d = stars.q + 1;
+      collision4.d = collision4.q + 1;
+      star4_r = 0;
+      star4_g = 0;
+      star4_b = 0; 
+      } else {
+      collision4.d = collision4.q;
+      star4_r = 0;
+      star4_g = 0;
+      star4_b = 0;  
+    }   
+   if (collision5.q == 0) {
+      collision5.d = ball.active & star5.active|ball1.active & star5.active;
+      star5_r = star5.red;
+      star5_g = star5.green;
+      star5_b = star5.blue;
+    } else if (collision5.q == 1) {
+      stars.d = stars.q + 1;
+      collision5.d = collision5.q + 1;
+      star5_r = 0;
+      star5_g = 0;
+      star5_b = 0; 
+      } else {
+      collision5.d = collision5.q;
+      star5_r = 0;
+      star5_g = 0;
+      star5_b = 0;  
+    }
+    if (collision6.q == 0) {
+      collision6.d = ball.active & star6.active|ball1.active & star6.active;
+      star6_r = star6.red;
+      star6_g = star6.green;
+      star6_b = star6.blue;
+    } else if (collision6.q == 1) {
+      stars.d = stars.q + 1;
+      collision6.d = collision6.q + 1;
+      star6_r = 0;
+      star6_g = 0;
+      star6_b = 0; 
+      } else {
+      collision6.d = collision6.q;
+      star6_r = 0;
+      star6_g = 0;
+      star6_b = 0;  
+    } 
+    if (collision7.q == 0) {
+      collision7.d = ball.active & star7.active|ball1.active & star7.active;
+      star7_r = star7.red;
+      star7_g = star7.green;
+      star7_b = star7.blue;
+    } else if (collision7.q == 1) {
+      stars.d = stars.q + 1;
+      collision7.d = collision7.q + 1;
+      star7_r = 0;
+      star7_g = 0;
+      star7_b = 0; 
+      } else {
+      collision7.d = collision7.q;
+      star7_r = 0;
+      star7_g = 0;
+      star7_b = 0;  
+    }  
+    if (collision8.q == 0) {
+      collision8.d = ball.active & star8.active|ball1.active & star8.active;
+      star8_r = star8.red;
+      star8_g = star8.green;
+      star8_b = star8.blue;
+    } else if (collision8.q == 1) {
+      stars.d = stars.q + 1;
+      collision8.d = collision8.q + 1;
+      star8_r = 0;
+      star8_g = 0;
+      star8_b = 0; 
+      } else {
+      collision8.d = collision8.q;
+      star8_r = 0;
+      star8_g = 0;
+      star8_b = 0;  
+    }  
+    if (collision9.q == 0) {
+      collision9.d = ball.active & star9.active|ball1.active & star9.active;
+      star9_r = star9.red;
+      star9_g = star9.green;
+      star9_b = star9.blue;
+    } else if (collision9.q == 1) {
+      stars.d = stars.q + 1;
+      collision9.d = collision9.q + 1;
+      star9_r = 0;
+      star9_g = 0;
+      star9_b = 0; 
+      } else {
+      collision9.d = collision9.q;
+      star9_r = 0;
+      star9_g = 0;
+      star9_b = 0;  
+    }
+    if (collision10.q == 0) {
+      collision10.d = ball.active & star10.active|ball1.active & star10.active;
+      star10_r = star10.red;
+      star10_g = star10.green;
+      star10_b = star10.blue;
+    } else if (collision10.q == 1) {
+      stars.d = stars.q + 1;
+      collision10.d = collision10.q + 1;
+      star10_r = 0;
+      star10_g = 0;
+      star10_b = 0; 
+      } else {
+      collision10.d = collision10.q;
+      star10_r = 0;
+      star10_g = 0;
+      star10_b = 0;  
+    }
+    if (collision11.q == 0) {
+      collision11.d = ball.active & star11.active|ball1.active & star11.active;
+      star11_r = star11.red;
+      star11_g = star11.green;
+      star11_b = star11.blue;
+    } else if (collision11.q == 1) {
+      stars.d = stars.q + 1;
+      collision11.d = collision11.q + 1;
+      star11_r = 0;
+      star11_g = 0;
+      star11_b = 0; 
+      } else {
+      collision11.d = collision11.q;
+      star11_r = 0;
+      star11_g = 0;
+      star11_b = 0;  
+    }         
+ 
+     if (ball01_collision.q == 0) {
+      ball01_collision.d = ball.active & ball1.active & ball.moving;
+    } else { 
+      ball01_collision.d = ball01_collision.q;
+      ball1_destroyed.d = 1;
+    }
+     if (ball10_collision.q == 0) {
+      ball10_collision.d = ball1.active & ball.active & ball1.moving;
+    } else {
+      ball10_collision.d = ball10_collision.q;
+      ball_destroyed.d = 1;
+    } 
+
+    if (ball_destroyed.q == 0) {
+      ball_r = ball.red;
+      ball_g = ball.green;
+      ball_b = ball.blue;
+      } else {
+      ball_r = 0;
+      ball_g = 0;
+      ball_b = 0;
+      } 
+    if (ball1_destroyed.q == 0) {
+      ball1_r = ball1.red;
+      ball1_g = ball1.green;
+      ball1_b = ball1.blue;
+      } else {
+      ball1_r = 0;
+      ball1_g = 0;
+      ball1_b = 0;
+      }
+    
+    if (stars.q == 12) {
+      pass = 1;
+      } else {
+      pass = 0;
+      }   
+
+    r = grid.red | ball_r |ball1_r |  star_r | star1_r|star2_r| star3_r | star4_r|star5_r|star6_r|star7_r|star8_r|star9_r|star10_r|star11_r;     // square b is red
+    g = grid.green|ball_g | ball1_g| star_g | star1_g|star2_g| star3_g | star4_g|star5_g|star6_g|star7_g|star8_g|star9_g|star10_g|star11_g;  // squares a and d are green
+    b = grid.blue|ball_b | ball1_b |  star_b | star1_b| star2_b| star3_b | star4_b|star5_b|star6_b|star7_b|star8_b|star9_b|star10_b|star11_b;    // square c is blue
+    } else {
+      ball.on = 0;    //must reset values so that the original level is restored
+      ball1.on = 0;
+
+      r = 0;          //rgb values =0 so the level isnt visibile
+      g = 0;
+      b = 0;
+      collision.d = 0;  //pass/fail signals
+      collision1.d = 0;
+      collision2.d = 0;
+      collision3.d = 0;
+      collision4.d = 0;
+      collision5.d = 0;
+      collision6.d = 0;
+      collision7.d = 0;
+      collision8.d = 0;
+      collision9.d = 0;
+      collision10.d = 0;
+      collision11.d = 0;
+      stars.d = 0;
+      ball.reset = 1;
+      ball1.reset = 1;
+      pass = 0;
+      current_ball.d = 0;
+      ball01_collision.d = 0;
+      ball10_collision.d = 0;
+      ball_destroyed.d = 0;
+      ball1_destroyed.d = 0;
+    }    
+  }
+}

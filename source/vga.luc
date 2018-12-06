@@ -1,0 +1,93 @@
+module vga (
+    input clk,  // clock
+    input rst,  // reset
+    //output o_blanking,     // high during blanking interval
+    //output o_active,       // high during active pixel drawing
+    //output o_screenend,    // high for one tick at the end of screen
+    output o_animate,      // high for one tick at end of active drawing
+    output hsync,
+    output vsync,
+    output x[11],
+    output y[11]
+  ) {
+  const H_DISPLAY       = 640; // horizontal display area
+	 const H_L_BORDER      =  48; // horizontal left border
+	 const H_R_BORDER      =  16; // horizontal right border
+	 const H_RETRACE       =  96; // horizontal retrace
+	 const H_MAX           = H_DISPLAY + H_L_BORDER + H_R_BORDER + H_RETRACE - 1;
+	 const START_H_RETRACE = H_DISPLAY + H_R_BORDER;
+	 const END_H_RETRACE   = H_DISPLAY + H_R_BORDER + H_RETRACE - 1;
+	
+	 const V_DISPLAY       = 480; // vertical display area
+	 const V_T_BORDER      =  10; // vertical top border
+	 const V_B_BORDER      =  33; // vertical bottom border
+	 const V_RETRACE       =   2; // vertical retrace
+	 const V_MAX           = V_DISPLAY + V_T_BORDER + V_B_BORDER + V_RETRACE - 1;
+  const START_V_RETRACE = V_DISPLAY + V_B_BORDER;
+	 const END_V_RETRACE   = V_DISPLAY + V_B_BORDER + V_RETRACE - 1;
+  .clk(clk){
+    .rst(rst) {
+    dff pixel[11];
+    dff line[11];
+    dff pixel_reg;
+    }
+  }
+	sig pixel_tick;
+	
+  always {
+  pixel_reg.d = ~pixel_reg.q;
+  pixel_tick = (pixel_reg.q == 0);
+    
+  
+    // blanking: high within the blanking period
+    //o_blanking = ((pixel.q < HA_STA) | (line.q > VA_END - 1));
+
+    // active: high during active pixel drawing
+    //o_active = ~((pixel.q < HA_STA) | (line.q > VA_END - 1)); 
+
+    // screenend: high for one tick at the end of the screen
+    //o_screenend = ((line.q == V_DISPLAY - 1) & (pixel.q == H_DISPLAY));
+
+    // animate: high for one tick at the end of the final active pixel line
+    o_animate = ((line.q == V_DISPLAY - 1) & (pixel.q == H_DISPLAY));
+
+  if (pixel.q < H_DISPLAY) {
+    x = pixel.q;
+    } else {
+    x = 0;
+    }
+  if (line.q < V_DISPLAY) {
+    y = line.q;
+      } else {
+      y = 0;
+      } 
+    
+    // horizontal sync
+  if (pixel.q >= START_H_RETRACE && pixel.q <= END_H_RETRACE) {
+    hsync = 1;
+  } else {
+    hsync = 0;
+  }
+
+  // vertical refresh
+  if (line.q >= START_V_RETRACE && line.q <= END_V_RETRACE) {
+    vsync = 1;
+  } else {
+    vsync = 0;
+  }
+
+  // advance pixel and line counters
+  if (pixel_tick == 1) {
+  if (pixel.q == H_MAX) {
+    if (line.q == V_MAX) {
+      line.d = 0;
+    } else {
+      line.d = line.q + 1;
+    }
+    pixel.d = 0;
+  } else {
+    pixel.d = pixel.q + 1;
+  }
+    }
+  }
+}

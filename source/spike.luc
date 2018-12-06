@@ -1,0 +1,80 @@
+module spike (
+    input clk,  // clock
+    input rst,  // reset
+    input i_x[5], //starting x
+    input i_y[5], //starting y
+    input x[11],
+    input y[11],
+    output red,
+    output green,
+    output blue,
+    output active  //1 if there is an output
+  ) {
+  sig sq_figure[30][30];
+  sig start_x[11];
+  sig start_y[11];
+  sig sq_fig_x[5];
+  sig sq_fig_y[5];
+  singleunmovingsquare umovingsquare(.i_x(start_x), .i_y(start_y), #H_SIZE(15), #V_SIZE(15));
+
+  always {
+  red = 0;
+  green = 0;
+  blue = 0;  
+  active = 0;
+  sq_figure[0][29:0] = 30b000000000000000000000000000000;
+  sq_figure[1][29:0] = 30b000000000000001000000000000000;
+  sq_figure[2][29:0] = 30b000000000000001100000000000000;
+  sq_figure[3][29:0] = 30b000000000000001100000000000000;
+  sq_figure[4][29:0] = 30b000000000000011110000000000000;
+  sq_figure[5][29:0] = 30b000001000001111111100001100000;
+  sq_figure[6][29:0] = 30b000001111111111111111111000000;
+  sq_figure[7][29:0] = 30b000000111111111111111111000000;
+  sq_figure[8][29:0] = 30b000000111111100001111111000000;
+  sq_figure[9][29:0] = 30b000000111110000000011111000000;
+  sq_figure[10][29:0] = 30b000000111100000000001111000000;
+  sq_figure[11][29:0] = 30b000001111000000000000111100000;
+  sq_figure[12][29:0] = 30b000001111000000000000111100000;
+  sq_figure[13][29:0] = 30b000011110000000000000011110000;
+  sq_figure[14][29:0] = 30b001111110000000000000011111110;
+  sq_figure[15][29:0] = 30b011111110000000000000011111100;
+  sq_figure[16][29:0] = 30b000011110000000000000011110000;
+  sq_figure[17][29:0] = 30b000001111000000000000111100000;
+  sq_figure[18][29:0] = 30b000001111000000000000111100000;
+  sq_figure[19][29:0] = 30b000000111100000000001111000000;
+  sq_figure[20][29:0] = 30b000000111110000000011111000000;
+  sq_figure[21][29:0] = 30b000000111111100001111111000000;
+  sq_figure[22][29:0] = 30b000000111111111111111111000000;
+  sq_figure[23][29:0] = 30b000000111111111111111111100000;
+  sq_figure[24][29:0] = 30b000001100001111111100000100000;
+  sq_figure[25][29:0] = 30b000000000000011110000000000000;
+  sq_figure[26][29:0] = 30b000000000000001100000000000000;
+  sq_figure[27][29:0] = 30b000000000000001100000000000000;
+  sq_figure[28][29:0] = 30b000000000000000100000000000000;
+  sq_figure[29][29:0] = 30b000000000000000000000000000000;
+         
+        
+  start_x = 19 + i_x * 40;
+  start_y = 19 + i_y * 40;
+    
+  sq_fig_x = x - umovingsquare.o_x1 - 1; // our figure's x axis when in square boundary
+  sq_fig_y = y - umovingsquare.o_y1 - 1; // our figure's y axis when in square boundary
+  if(x > umovingsquare.o_x1 && x <= umovingsquare.o_x2 && y > umovingsquare.o_y1 && y <= umovingsquare.o_y2)  {
+     //generate picture from the video memory
+      
+   if(sq_figure[sq_fig_y][sq_fig_x] == 1) {
+      red = 1;
+      green = 1;
+      blue = 0;
+      active = 1;
+      }
+   else {
+     red = 0;
+     green = 0;
+     blue= 0;
+     active = 0;
+    }
+    }
+  
+  }
+}

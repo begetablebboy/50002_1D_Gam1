@@ -1,0 +1,21 @@
+module boole (
+  input a[16],
+  input b[16],
+  input alufn[6],
+  output out[16]
+  ) {
+  
+  always {
+    out = 16hxx;
+    case(alufn){
+      Instruction.AND: // AND operation
+        out = a & b;
+      Instruction.OR: // OR operation
+        out = a | b;
+      Instruction.XOR: // XOR operation
+        out = a ^ b;
+      Instruction.LDR: // "A" operation
+        out = a;
+    }
+  }   
+}

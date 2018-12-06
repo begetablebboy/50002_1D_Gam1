@@ -1,0 +1,218 @@
+//TODO Make a case where the ball is moving adjust graphic and position 
+//TODO direction input
+
+module ball (
+    input clk,  // clock
+    input rst,  // reset
+    input i_x[5], //starting x
+    input i_y[5], //starting y
+    input left,
+    input right,
+    input up,
+    input down,
+    input x[11],
+    input y[11],
+    input grid[10][16],
+    input i_animate,
+    input on,              //controls if the ball can move, due to different levels
+    input reset,
+    output red,
+    output green,
+    output blue,
+    output active,         //if ball rgb is on
+    output moving          //if ball is moving
+  ) {
+  alu alu;
+  .clk(clk) {
+  .rst(rst) {
+    dff currentx[5](#INIT(31));
+    dff currenty[5](#INIT(31));
+    dff pixel_reg;
+    fsm state = {IDLE, LEFT, RIGHT, UP, DOWN};
+
+    }
+  }
+  sig start_x[11];
+  sig start_y[11];
+  sig sq_fig_x[5];
+  sig sq_fig_y[5];
+  sig sq_figure[20][20];
+  sig pixel_tick;
+  singleunmovingsquare umovingsquare(#H_SIZE(10), #V_SIZE(10), .i_x(start_x), .i_y(start_y));
+
+  always {
+  pixel_reg.d = ~pixel_reg.q;
+  pixel_tick = (pixel_reg.q == 0);
+  red = 0;
+  green = 0;
+  blue = 0; 
+  active = 0; 
+  moving = on;
+  alu.a = 0;
+  alu.b = 0;
+  alu.alufn = Instruction.AND;
+  sq_figure[0][19:0] = 20b00000000000000000000;
+  sq_figure[1][19:0] = 20b00000001111100000000;
+  sq_figure[2][19:0] = 20b00000111111111000000;
+  sq_figure[3][19:0] = 20b00011111111111110000;
+  sq_figure[4][19:0] = 20b00111111111111111000;
+  sq_figure[5][19:0] = 20b00111111111111111000;
+  sq_figure[6][19:0] = 20b01111111111111111100;
+  sq_figure[7][19:0] = 20b01111111111111111100;
+  sq_figure[8][19:0] = 20b11111111111111111110;
+  sq_figure[9][19:0] = 20b11111111111111111110;
+  sq_figure[10][19:0] = 20b11111111111111111110;
+  sq_figure[11][19:0] = 20b11111111111111111110;
+  sq_figure[12][19:0] = 20b11111111111111111110;
+  sq_figure[13][19:0] = 20b01111111111111111100;
+  sq_figure[14][19:0] = 20b01111111111111111100;
+  sq_figure[15][19:0] = 20b00111111111111111000;
+  sq_figure[16][19:0] = 20b00111111111111111000;
+  sq_figure[17][19:0] = 20b00011111111111110000;
+  sq_figure[18][19:0] = 20b00000111111111000000;
+  sq_figure[19][19:0] = 20b00000001111100000000;
+
+
+    case(state.q) {
+      state.IDLE:
+      alu.a = currentx.q == 31;
+      alu.b = currenty.q == 31;
+      alu.alufn = Instruction.AND;        
+        if (alu.alu) {   
+          currentx.d = i_x;
+          currenty.d = i_y;
+        } else {
+          currentx.d = currentx.q;
+          currenty.d = currenty.q;
+        }
+        if (on) {
+
+        if(left) {
+          state.d = state.LEFT;
+        }
+        if(right) {
+          state.d = state.RIGHT;
+        }
+        if(up) {
+          state.d = state.UP;
+        }
+        if(down) {
+          state.d = state.DOWN;
+        }
+    }
+        
+      state.LEFT:
+        if (pixel_tick == 1 && i_animate ==1) {
+        if (currentx.q == 0 && grid[currenty.q][15] ==0) {
+          currentx.d = 15;
+           currenty.d =currenty.q;
+          } else if (grid[currenty.q][(currentx.q - 1)] == 0) {
+            alu.a = currentx.q;
+            alu.b = 1;
+            alu.alufn = Instruction.SUB;
+            currentx.d = alu.alu;
+            currenty.d = currenty.q;       
+        } else {
+           state.d = state.IDLE;
+          }
+      }
+      state.RIGHT:
+        if (pixel_tick == 1 && i_animate ==1) {
+          if (currentx.q == 15 && grid[currenty.q][0] == 0) {
+              currentx.d = 0;
+              currenty.d = currenty.q;
+          } else if (grid[currenty.q][(currentx.q + 1)] == 0) {
+            alu.a = currentx.q;
+            alu.b = 1;
+            alu.alufn = Instruction.ADD;
+            currentx.d = (alu.alu) ;            
+            currenty.d = currenty.q;       
+        } else {
+           state.d = state.IDLE;
+          }
+      }
+      state.UP:
+        if (pixel_tick == 1 && i_animate ==1) {
+        if (currenty.q == 0 && grid[9][currentx.q] ==0) {
+          currentx.d = currentx.q;
+           currenty.d = 9;
+          } else if (grid[currenty.q - 1][currentx.q] == 0) {
+            alu.a = currenty.q;
+            alu.b = 1;
+            alu.alufn = Instruction.SUB;
+            currentx.d = currentx.q;
+            currenty.d = alu.alu;       
+        } else {
+           state.d = state.IDLE;
+          }
+      }              
+      state.DOWN:
+        if (pixel_tick == 1 && i_animate ==1) {
+        if (currenty.q == 9 && grid[0][currentx.q] ==0) {
+           currentx.d = currentx.q;
+           currenty.d = 0;
+          } else if (grid[currenty.q + 1][currentx.q ] == 0) {
+            alu.a = currenty.q;
+            alu.b = 1;
+            alu.alufn = Instruction.ADD;
+            currentx.d = currentx.q;
+            currenty.d = alu.alu;       
+        } else {
+           state.d = state.IDLE;
+          }
+      }    
+    }
+  if (reset) {
+    currentx.d = i_x;
+    currenty.d = i_y;
+    state.d = state.IDLE;
+  }    
+  start_x = 19 + currentx.q * 40;
+  start_y = 19 + currenty.q * 40;
+  sq_fig_x = x - umovingsquare.o_x1 - 1; // our figure's x axis when in square boundary
+  sq_fig_y = y - umovingsquare.o_y1 - 1; // our figure's y axis when in square boundary
+  if(x > umovingsquare.o_x1 && x <= umovingsquare.o_x2 && y > umovingsquare.o_y1 && y <= umovingsquare.o_y2)  {
+     //generate picture from the video memory
+      
+   if(sq_figure[sq_fig_y][sq_fig_x] == 1) {
+      if (on) {
+      red = 0;
+      green = 0;
+      blue = 1;
+      active = 1;
+      } else {
+        red = 0;
+        green =1;
+        blue = 0;
+        active = 1;
+        }
+      }
+   else {
+     red = 0;
+     green = 0;
+     blue= 0;
+     active = 0;
+    }
+    }
+  }
+}
+    
+  /*if (pixel_tick == 1 && i_animate ==1) {
+      if (grid[currenty.q][currentx.q - 1] == 0) {
+        currentx.d = currentx.q - 1;
+        currenty.d = currenty.q;       
+        } else {
+          moving_left.d = 0;
+          }
+      }
+    if (moving_right.q) {
+      if (grid[currenty.q][currentx.q + 1] == 0) {
+        currentx.d = currentx.q + 1;
+        currenty.d = currenty.q;       
+        } else {
+          moving_right.d = 0;
+          }
+      }  
+    
+    }
+  }*/

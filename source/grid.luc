@@ -1,0 +1,65 @@
+
+module grid #(
+    D_WIDTH=640,    // width of display
+    D_HEIGHT=480    // height of display
+    )
+    (
+    input clk,         // base clock
+    input rst,         // reset: returns animation to starting position
+    input grid[10][16], //grid: y on outside x on inside
+    input x[11],
+    input y[11],
+    output red,  // red
+    output green,  // green
+    output blue  // blue
+    ) {
+    .clk(clk) {
+      .rst(rst) {
+    dff i[5];
+    dff j[5];
+    }
+  }
+  umovingsquare square;
+  umovingsquare square2;
+  
+  sig sq_a, sq_b;
+  always {
+  red = 0;
+  green = 0;
+  blue = 0;
+  square.i_x = 19 + i.q * 40;
+  square.i_y = 19 + j.q * 40;
+  square2.i_x = 19 + (i.q + 1) * 40;
+  square2.i_y = 19 + (j.q + 1) * 40;
+
+  if (x==square.o_x4){  
+  if (i.q ==15) {
+    if (y==square.o_y4) {
+    if (j.q == 9) {
+      j.d = 0;
+    } else {
+      j.d = j.q+1;
+    }
+        }
+      i.d = 0;
+    } else {
+    i.d = i.q + 1;
+    }
+    }
+    
+
+      if(grid[j.q][i.q] ==1){
+      sq_a = ((x > square.o_x1) & (y > square.o_y1) & (x <= square.o_x2) & (y <= square.o_y2)) ? 1 : 0;
+      sq_b = ((x > square.o_x3) & (y > square.o_y3) & (x < square.o_x4) & (y < square.o_y4)) ? 1 : 0;
+     
+
+      red = 0;         // square b is red
+      green = sq_b;  
+      blue = sq_b;         // square c is blue
+      
+       
+      
+    } 
+  }
+
+}

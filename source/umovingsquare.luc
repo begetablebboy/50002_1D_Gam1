@@ -1,0 +1,41 @@
+
+module umovingsquare #(
+    H_SIZE=20,      // half square width (for ease of co-ordinate calculations)
+    V_SIZE=20,
+    H2_SIZE=15,
+    V2_SIZE=15, 
+    IX=320,         // initial horizontal position of square centre
+    IY=240,         // initial vertical position of square centre
+    D_WIDTH=640,    // width of display
+    D_HEIGHT=480    // height of display
+    )
+    (
+    input i_x[11],
+    input i_y[11],
+    output o_x1[11],  // square left edge: 12-bit value: 0-4095
+    output o_x2[11],  // square right edge
+    output o_y1[11],  // square top edge
+    output o_y2[11],   // square bottom edge
+    output o_x3[11],  // square left edge: 12-bit value: 0-4095
+    output o_x4[11],  // square right edge
+    output o_y3[11],  // square top edge
+    output o_y4[11]   // square bottom edge
+    ) {
+  sig x[11];
+  sig y[11];
+  always {
+      x = i_x;
+      y = i_y;
+      o_x1 = x - H_SIZE;  // left: centre minus half horizontal size
+      o_x2 = x + H_SIZE;  // right
+      o_y1 = y - V_SIZE;  // top
+      o_y2 = y + V_SIZE;  // bottom
+      o_x3 = x - H2_SIZE;  // left: centre minus half horizontal size
+      o_x4 = x + H2_SIZE;  // right
+      o_y3 = y - V2_SIZE;  // top
+      o_y4 = y + V2_SIZE;  // bottom
+    
+    }
+  
+  }
+

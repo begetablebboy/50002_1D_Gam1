@@ -1,0 +1,29 @@
+module compare (
+    input alufn[6],
+    input a[16],
+    input b[16],
+    output out[16]
+  ) {
+  sig z;
+  sig v;
+  sig n;
+  .a(a), .b(b), .alufn(6b1) {
+    adder adder;
+  }
+
+  always {
+    out = 8hxx;// Setting default output to 0
+    z = adder.zOut;
+    v = adder.vOut;
+    n = adder.nOut;
+    
+    case(alufn) {
+    Instruction.CMPEQ:
+      out[0] = z;
+    Instruction.CMPLT:
+      out[0] = n ^ v;
+    Instruction.CMPLE:
+      out[0] = z | (n ^ v);
+    }
+  }
+}

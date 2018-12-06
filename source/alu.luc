@@ -1,0 +1,45 @@
+module alu (
+    input alufn[6],
+    input a[16],
+    input b[16],
+    output out_a[16],
+    output out_b[16],
+    output alu[16],
+    output zOut,
+    output vOut,
+    output nOut
+  ) {
+  
+  // Initialize all submodules with the appropriate inputs
+  .a(a), .b(b), .alufn(alufn) {
+    adder adder;
+    boole boolean;
+    compare compare;
+  }
+  shifter shifter(.alufn(alufn), .a(a), .b(b[4:0]));
+  
+  always {
+    // Set default outputs
+    zOut = 0;
+    vOut = 0;
+    nOut = 0;
+    alu = 16h00;
+    out_a = a; // for reading a
+    out_b = b; // for reading b
+    
+    // selects the correct submodule given the alufn
+    case(alufn[5:4]) {
+      b00:
+        alu = adder.out;
+        zOut = adder.zOut;
+        vOut = adder.vOut;
+        nOut = adder.nOut;
+      b01:
+        alu = boolean.out;
+      b10:
+        alu = shifter.out;
+      b11:
+        alu = compare.out;
+    }
+  }
+}
